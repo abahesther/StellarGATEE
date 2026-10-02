@@ -82,6 +82,34 @@ fn strip_html_comments(html: &str) -> String {
 
 const DASHBOARD_FORMAT_JS: &str = include_str!("../static/dashboard-format.js");
 
+const DASHBOARD_STATE_JS: &str = include_str!("../static/state.js");
+
+/// All ES module siblings of `app.js`, as `(served_path, source_body)` pairs.
+///
+/// `every_dashboard_module_import_resolves_to_a_served_route` iterates this
+/// list to verify every relative import in each module resolves to a route the
+/// router actually serves. Add a new module here the moment it is created so
+/// the check stays exhaustive.
+const MODULES: &[(&str, &str)] = &[
+    ("/dashboard/format.js",  include_str!("../static/format.js")),
+    ("/dashboard/session.js", include_str!("../static/session.js")),
+    ("/dashboard/state.js",   include_str!("../static/state.js")),
+    ("/dashboard/keys.js",    include_str!("../static/keys.js")),
+];
+
+/// Every `/dashboard/…` path the router actually serves.
+///
+/// Used by `every_dashboard_module_import_resolves_to_a_served_route` to
+/// confirm that a relative import in a module has a matching route.
+const JS_ROUTES: &[&str] = &[
+    "/dashboard/app.js",
+    "/dashboard/format.js",
+    "/dashboard/session.js",
+    "/dashboard/state.js",
+    "/dashboard/keys.js",
+    "/dashboard/vendor/qrcode.js",
+];
+
 #[test]
 fn dashboard_api_requests_use_canonical_v1_base() {
     assert!(
@@ -101,7 +129,7 @@ fn dashboard_api_requests_use_canonical_v1_base() {
     assert_eq!(
         direct_fetches,
         [
-            "return fetch(API_BASE + path, { method: opts.method || \"GET\", headers: headers }).then(",
+            "return fetch(API_BASE + path, { method: opts.method || \"GET\", headers: headers, body: opts.body || null }).then(",
             "fetch(\"/\")",
             "fetch(\"/ready\", { headers: { Accept: \"application/json\" } })",
         ],

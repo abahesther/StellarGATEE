@@ -206,6 +206,51 @@ export function buildListQuery(filters) {
 }
 
 /**
+ * Build a SEP-7 `web+stellar:pay` URI for a payment intent.
+ *
+ * The URI encodes the destination, memo, amount and asset so a SEP-7-capable
+ * wallet can prefill a payment directly from a QR code scan or a tap.
+ *
+ * Native XLM uses no asset_code/asset_issuer parameters; issued assets use
+ * both so the wallet can verify the exact token. All values are percent-encoded
+ * so memo text containing spaces, commas or special characters round-trips
+ * correctly. Memo type is always MEMO_TEXT to match how the gateway generates
+ * and matches memos (see `generate_unique_memo` in the backend).
+ *
+ * @param {object} payment  A payment record from the API.
+ * @returns {string}        The full web+stellar:pay URI.
+ */
+export function buildSep7Uri(payment) {
+  var p = payment || {};
+  var params = [];
+  if (p.destination_address) {
+    params.push("destination=" + encodeURIComponent(p.destination_address));
+  }
+  if (p.amount) {
+    // Strip trailing zeros the same way formatAmount does, so "10.0000000"
+    // becomes "10" in the URI — wallets display this value to the user.
+    var n = Number(p.amount);
+    var amtStr = isFinite(n)
+      ? n.toFixed(7).replace(/\.?0+$/, "")
+      : String(p.amount);
+    params.push("amount=" + encodeURIComponent(amtStr));
+  }
+  var asset = String(p.asset || "XLM").toUpperCase();
+  if (asset !== "XLM") {
+    // Issued asset: asset_code + asset_issuer required.
+    params.push("asset_code=" + encodeURIComponent(asset));
+    if (p.asset_issuer) {
+      params.push("asset_issuer=" + encodeURIComponent(p.asset_issuer));
+    }
+  }
+  if (p.memo) {
+    params.push("memo=" + encodeURIComponent(p.memo));
+    params.push("memo_type=MEMO_TEXT");
+  }
+  return "web+stellar:pay?" + params.join("&");
+}
+
+/**
  * Case-insensitive filter over the rows already loaded, matching a query against
  * the memo and the payment id.
  *

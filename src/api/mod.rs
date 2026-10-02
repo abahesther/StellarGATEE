@@ -212,6 +212,8 @@ pub fn router(state: Arc<AppState>) -> axum::Router {
         .route("/dashboard/session.js", get(dashboard_session_js))
         .route("/dashboard/state.js", get(dashboard_state_js))
         .route("/dashboard/keys.js", get(dashboard_keys_js))
+        .route("/dashboard/vendor/qrcode.js", get(dashboard_qrcode_js))
+        .route("/dashboard/theme.js", get(dashboard_theme_js))
         /* The versioned API surface, mounted twice.
         `/v1` is canonical. The same routes stay mounted unprefixed so every
         existing integrator keeps working — shipping versioning by breaking all
@@ -1273,6 +1275,8 @@ const DASHBOARD_FORMAT_JS: &str = include_str!("../../static/format.js");
 const DASHBOARD_SESSION_JS: &str = include_str!("../../static/session.js");
 const DASHBOARD_STATE_JS: &str = include_str!("../../static/state.js");
 const DASHBOARD_KEYS_JS: &str = include_str!("../../static/keys.js");
+const DASHBOARD_QRCODE_JS: &str = include_str!("../../static/vendor/qrcode.js");
+const DASHBOARD_THEME_JS: &str = include_str!("../../static/dashboard-theme.js");
 
 /// Locks the dashboard to its own origin: no third-party script, style, frame
 /// or connection. The page ships no inline script or style, so this needs no
@@ -1330,6 +1334,14 @@ async fn dashboard_state_js() -> impl IntoResponse {
 
 async fn dashboard_keys_js() -> impl IntoResponse {
     dashboard_asset(DASHBOARD_KEYS_JS, "text/javascript; charset=utf-8")
+}
+
+async fn dashboard_qrcode_js() -> impl IntoResponse {
+    dashboard_asset(DASHBOARD_QRCODE_JS, "text/javascript; charset=utf-8")
+}
+
+async fn dashboard_theme_js() -> impl IntoResponse {
+    dashboard_asset(DASHBOARD_THEME_JS, "text/javascript; charset=utf-8")
 }
 
 async fn not_found() -> impl IntoResponse {

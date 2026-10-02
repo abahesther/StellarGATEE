@@ -153,6 +153,7 @@
           <span id="selection-count" class="muted small" hidden></span>
           <button id="export-selected" class="ghost" hidden>Export selected</button>
           <button id="refresh" class="ghost">Refresh</button>
+          <button id="new-payment-btn" class="primary" aria-haspopup="dialog">New payment</button>
           <button id="help-open" class="ghost" aria-haspopup="dialog">
             Shortcuts&nbsp;<kbd>?</kbd>
           </button>
@@ -249,31 +250,104 @@
       </div>
     </div>
 
-    <!-- Keyboard shortcut help (#721).
-         The list is rendered from the SHORTCUTS table in keys.js, so a shortcut
-         cannot exist without appearing here and cannot be documented with the
-         wrong key. Rendered as a dialog so it is announced as one, and kept out
-         of #app so it is reachable from anywhere the app is. -->
-    <div
-      id="help"
-      class="help"
-      role="dialog"
+    <!-- Create payment dialog (#758 / #760 / #761 / #763).
+         A real <dialog> so it gets top-layer behaviour, ::backdrop, Escape and
+         UA focus-restoration for free. The form section and the instructions
+         section are mutually exclusive: the form is shown first, the
+         instructions appear after a successful POST. -->
+    <dialog
+      id="create-payment-dialog"
+      class="create-dialog"
       aria-modal="true"
-      aria-labelledby="help-title"
-      hidden
+      aria-labelledby="create-dialog-title"
     >
-      <div class="help-panel card">
+      <!-- ── Form section ────────────────────────────────────────────── -->
+      <div id="create-payment-form-section">
         <div class="detail-head">
-          <h2 id="help-title">Keyboard shortcuts</h2>
-          <button id="help-close" class="ghost" aria-label="Close">&times;</button>
+          <h2 id="create-dialog-title">New payment</h2>
+          <button id="create-cancel" class="ghost" aria-label="Close">&times;</button>
         </div>
-        <ul id="help-list" class="help-list"></ul>
-        <p class="muted small">
-          Shortcuts are ignored while you are typing in a field. Press
-          <kbd>Esc</kbd> to close this panel.
-        </p>
+        <form id="create-payment-form" method="dialog" autocomplete="off" novalidate>
+          <label class="field-label" for="create-amount">Amount</label>
+          <input
+            id="create-amount"
+            name="amount"
+            type="text"
+            inputmode="decimal"
+            placeholder="e.g. 10.00"
+            required
+            spellcheck="false"
+          />
+          <label class="field-label" for="create-asset">Asset</label>
+          <select id="create-asset" name="asset">
+            <option value="XLM" selected>XLM (native)</option>
+            <option value="USDC">USDC</option>
+          </select>
+          <label class="field-label" for="create-webhook">Webhook URL <span class="muted small">(optional)</span></label>
+          <input
+            id="create-webhook"
+            name="webhook_url"
+            type="url"
+            placeholder="https://example.com/webhook"
+            spellcheck="false"
+          />
+          <p id="create-payment-error" class="error" hidden></p>
+          <div class="form-actions">
+            <button type="submit" id="create-submit" class="primary">Create payment</button>
+            <button type="button" id="create-cancel-2" class="ghost">Cancel</button>
+          </div>
+        </form>
       </div>
-    </div>
+
+      <!-- ── Instructions section (#761 / #763) ──────────────────────── -->
+      <div id="create-payment-instructions" hidden>
+        <div class="detail-head">
+          <h2>Payment created</h2>
+          <button id="create-instr-close" class="ghost" aria-label="Close">&times;</button>
+        </div>
+        <p class="muted small">Share the details below with the payer.</p>
+        <dl class="fields">
+          <dt>Destination</dt>
+          <dd id="instr-destination-row" class="mono copy-row">
+            <span id="instr-destination"></span>
+          </dd>
+          <dt>Memo</dt>
+          <dd id="instr-memo-row" class="mono copy-row">
+            <span id="instr-memo"></span>
+          </dd>
+          <dt>Amount</dt>
+          <dd><span id="instr-amount"></span></dd>
+          <dt>Asset</dt>
+          <dd><span id="instr-asset"></span></dd>
+          <dt>Expires</dt>
+          <dd><span id="instr-expiry"></span></dd>
+          <dt>Payment ID</dt>
+          <dd id="instr-id-row" class="mono copy-row">
+            <span id="instr-id"></span>
+          </dd>
+        </dl>
+
+        <!-- QR code for the SEP-7 URI (#763). The SVG is rendered by the
+             vendored encoder and injected here. The text alternative below
+             always contains the full URI so the information is accessible
+             even when the QR image fails to render. -->
+        <div class="instr-qr-section">
+          <h3>Scan to pay</h3>
+          <div id="instr-qr" class="qr-container" aria-hidden="true"></div>
+          <details class="qr-uri-details">
+            <summary class="muted small">SEP-7 URI</summary>
+            <code id="instr-qr-alt" class="mono qr-uri-text"></code>
+          </details>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="create-another" class="primary">Create another</button>
+          <button type="button" id="create-done" class="ghost">Done</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="/dashboard/vendor/qrcode.js"></script>
     <script type="module" src="/dashboard/app.js"></script>
   </body>
 </html>
